@@ -1,0 +1,20 @@
+FROM quay.io/centos/centos:8
+
+#STOPSIGNAL SIGRTMIN+3
+
+RUN yum --setopt=tsflags=nodocs -y update && \
+    yum --setopt=tsflags=nodocs -y install centos-release-gluster6 && \
+    yum --setopt=tsflags=nodocs -y install glusterfs-server && \
+    yum clean all 
+
+#mask systemd-machine-id-commit.service - partial fix for https://bugzilla.redhat.com/show_bug.cgi?id=1472439
+RUN systemctl mask systemd-remount-fs.service dev-hugepages.mount sys-fs-fuse-connections.mount systemd-logind.service getty.target console-getty.service systemd-udev-trigger.service systemd-udevd.service systemd-random-seed.service systemd-machine-id-commit.service && \
+    systemctl enable glusterd
+
+#procps-ng is already in rhel base image, do not install
+
+EXPOSE 24007 24008 24009 38465 38466 38468 38469 49152 49153 49154 49156 49157 49158 49159 49160 49161 49162
+
+VOLUME /etc/glusterfs /var/lib/glusterd /var/log/glusterfs
+
+CMD ["/sbin/init", "systemd.default_standard_output=journal+console"]
